@@ -1,0 +1,3 @@
+ignore:
+  - DL3008  # apt package version pinning — intentionally unpinned for system tools
+  - DL3016  # npm version pinning — intentionally unpinned to always use latest Claude Code CLI

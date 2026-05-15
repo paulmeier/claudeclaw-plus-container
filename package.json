@@ -1,0 +1,14 @@
+{
+  "name": "claudeclaw-plus-container",
+  "version": "1.0.0",
+  "description": "Docker container for ClaudeClaw+",
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^24.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,21 @@
+# Logs
+*.log
+
+# Local env / secrets
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# Claude Code local settings (permissions, MCP config)
+.claude/
+
+# Local settings.json if mounted for testing
+settings.json
+
+# Node
+node_modules/
+
+# Local backups
+backups/
