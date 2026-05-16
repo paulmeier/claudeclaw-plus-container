@@ -4,9 +4,7 @@
 
 # claudeclaw-plus-container
 
-[![Release](https://img.shields.io/github/v/release/paulmeier/claudeclaw-plus-container)](https://github.com/paulmeier/claudeclaw-plus-container/releases)
 [![Release Please](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/release-please.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/release-please.yml)
-[![Docker publish](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/docker-publish.yml)
 [![Lint](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml)
 [![Security scan](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml)
 [![Container](https://img.shields.io/badge/ghcr.io-paulmeier%2Fclaudeclaw--plus--container-2496ED?logo=docker&logoColor=white)](https://github.com/paulmeier/claudeclaw-plus-container/pkgs/container/claudeclaw-plus-container)
