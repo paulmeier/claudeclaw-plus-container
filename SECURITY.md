@@ -3,7 +3,7 @@
 ## Supported Versions
 
 claudeclaw-plus-container is released as a single rolling Docker image
-(`paulmeier/claudeclaw-plus-container:latest`). Only the most recent published
+(`ghcr.io/paulmeier/claudeclaw-plus-container:latest`). Only the most recent published
 release is supported with security fixes. Tagged releases are cut from `main`
 via semantic-release; pin to a specific tag if you need reproducibility, but be
 aware that older tags will not receive backports.
