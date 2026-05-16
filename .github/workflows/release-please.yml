@@ -3,8 +3,14 @@ name: Release Please
 # Opens (and keeps updating) a release PR whenever a conventional-commit
 # `feat:` or `fix:` lands on main. Merging that release PR cuts the next
 # version: release-please updates CHANGELOG.md, creates the git tag, and
-# publishes a GitHub Release. The release event then triggers
-# docker-publish.yml to build and push the image.
+# publishes a GitHub Release. The job then dispatches docker-publish.yml
+# at the new tag so the image is built and pushed.
+#
+# Why dispatch instead of letting docker-publish.yml listen on
+# `release: published`? Releases created with the default GITHUB_TOKEN
+# do NOT trigger downstream workflow runs (GitHub's loop-prevention
+# behavior). workflow_dispatch via GITHUB_TOKEN is explicitly allowed,
+# so we use that as the bridge.
 
 on:
   push:
@@ -14,12 +20,23 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write   # required to dispatch docker-publish.yml
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - id: release
+        uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Trigger docker-publish for the new release
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run docker-publish.yml \
+            --repo ${{ github.repository }} \
+            --field tag=${{ steps.release.outputs.tag_name }}

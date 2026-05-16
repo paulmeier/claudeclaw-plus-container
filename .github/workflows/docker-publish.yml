@@ -1,12 +1,17 @@
 name: Docker publish
 
-# Triggered when release-please's PR is merged and a GitHub Release is
-# published. Builds the multi-arch image at the released tag and pushes
-# to ghcr.io with semver and `latest` tags.
+# Builds the multi-arch image at the requested tag and pushes to ghcr.io
+# with semver and `latest` tags. Triggered by release-please.yml after a
+# release is cut, or manually via `gh workflow run docker-publish.yml
+# --field tag=v1.2.3` (also via the Actions UI's "Run workflow" button).
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to build and push (e.g., v1.0.0)'
+        required: true
+        type: string
 
 jobs:
   docker:
@@ -17,10 +22,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout at the release tag
+      - name: Checkout at the tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag }}
 
       # Produces all relevant Docker tags, e.g. for v1.2.3:
       #   :1.2.3   :1.2   :1   :latest
@@ -30,9 +35,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},value=${{ github.event.release.tag_name }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }}
-            type=semver,pattern={{major}},value=${{ github.event.release.tag_name }}
+            type=semver,pattern={{version}},value=${{ inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag }}
+            type=semver,pattern={{major}},value=${{ inputs.tag }}
             type=raw,value=latest
 
       - name: Set up QEMU (for multi-arch builds)
