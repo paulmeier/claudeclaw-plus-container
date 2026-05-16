@@ -1,0 +1,25 @@
+name: Release Please
+
+# Opens (and keeps updating) a release PR whenever a conventional-commit
+# `feat:` or `fix:` lands on main. Merging that release PR cuts the next
+# version: release-please updates CHANGELOG.md, creates the git tag, and
+# publishes a GitHub Release. The release event then triggers
+# docker-publish.yml to build and push the image.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
