@@ -1,0 +1,16 @@
+services:
+  claudeclaw-plus:
+    build: .
+    restart: unless-stopped
+    volumes:
+      # Persists Claude Code credentials, ClaudeClaw+ config/logs/jobs, and whisper models
+      - claudeclaw-plus-data:/root/.claude
+      # Optional: mount your own pre-configured settings.json
+      # - ./settings.json:/root/.claude/claudeclaw/settings.json:ro
+      # Optional: mount a backup destination for use with /backup.sh inside the container
+      # - ${HOME}/Backups/claudeclaw-plus:/backup
+    ports:
+      - "4632:4632"
+
+volumes:
+  claudeclaw-plus-data:
