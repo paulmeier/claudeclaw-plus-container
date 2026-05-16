@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.0...v1.0.1) (2026-05-16)
+
+
+### Bug Fixes
+
+* chain docker-publish via workflow_dispatch (release event from GITHUB_TOKEN doesn't fire downstream workflows) ([0b49515](https://github.com/paulmeier/claudeclaw-plus-container/commit/0b49515fa70c155254acc3b57f56fb8b9c86d507))
+* chain docker-publish via workflow_dispatch instead of release event ([ac58826](https://github.com/paulmeier/claudeclaw-plus-container/commit/ac5882600b9ae978723d46fe513dec2c6c1472db))
+
 ## 1.0.0 (2026-05-16)
 
 
