@@ -4,6 +4,7 @@
 
 # claudeclaw-plus-container
 
+[![Release](https://img.shields.io/github/v/release/paulmeier/claudeclaw-plus-container)](https://github.com/paulmeier/claudeclaw-plus-container/releases)
 [![Release Please](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/release-please.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/release-please.yml)
 [![Lint](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml)
 [![Security scan](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml)
