@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.1...v1.0.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* install python3 to support Claude Code subprocesses ([b261e6e](https://github.com/paulmeier/claudeclaw-plus-container/commit/b261e6e853e8171b2e153f3241b7c953d0535ed1))
+* install python3 to support Claude Code subprocesses ([31f741b](https://github.com/paulmeier/claudeclaw-plus-container/commit/31f741b73ee9c47e1bde6864713a3285be360256))
+
 ## [1.0.1](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.0...v1.0.1) (2026-05-16)
 
 
