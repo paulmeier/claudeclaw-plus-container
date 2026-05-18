@@ -75,4 +75,19 @@ export NPM_CONFIG_PREFIX=/root/.claude/npm-global
 export NPM_CONFIG_CACHE=/root/.claude/npm-cache
 export PATH=/root/.claude/npm-global/bin:$PATH
 
+# Persist Python user-installed packages and pip cache inside the volume —
+# same model as the npm setup above. PYTHONUSERBASE relocates `pip install
+# --user` site-packages and bin scripts to the volume; PIP_USER=1 makes
+# user-mode the default so `pip install foo` just works; PIP_BREAK_SYSTEM_PACKAGES=1
+# bypasses Debian's PEP 668 externally-managed marker (we are not touching
+# system site-packages — only the relocated user-base). Without this,
+# packages land under /root/.local or /usr/lib/python3/dist-packages and
+# get wiped on every image pull.
+mkdir -p /root/.claude/python-user/bin /root/.claude/pip-cache
+export PYTHONUSERBASE=/root/.claude/python-user
+export PIP_USER=1
+export PIP_BREAK_SYSTEM_PACKAGES=1
+export PIP_CACHE_DIR=/root/.claude/pip-cache
+export PATH=/root/.claude/python-user/bin:$PATH
+
 exec bun run /app/src/index.ts "$@"
