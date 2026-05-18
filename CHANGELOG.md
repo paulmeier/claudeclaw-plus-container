@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.2...v1.1.0) (2026-05-18)
+
+
+### Features
+
+* install python3 + pip and persist pip-installed packages in the volume ([5e78c68](https://github.com/paulmeier/claudeclaw-plus-container/commit/5e78c68563baec1b56b14469c4702553c2b2b04c))
+* install python3 + pip and persist pip-installed packages in the volume ([c1239ea](https://github.com/paulmeier/claudeclaw-plus-container/commit/c1239eadf5ea91748c88f848d5795ce49f56badd))
+
 ## [1.0.2](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.1...v1.0.2) (2026-05-18)
 
 
