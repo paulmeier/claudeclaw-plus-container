@@ -299,6 +299,8 @@ Everything is stored in the `claudeclaw-plus-data` named volume at `/root/.claud
 | `plugins/`                 | Installed Claude Code plugins           |
 | `npm-global/`              | Globally installed npm packages + bins  |
 | `npm-cache/`               | npm and npx download cache              |
+| `python-user/`             | `pip install` site-packages + bins      |
+| `pip-cache/`               | pip download cache                      |
 
 To back up or inspect the volume:
 
@@ -372,6 +374,57 @@ services:
 
 - Wiping the volume (`docker compose down -v`) removes installed packages along with everything else. Use [`backup.sh`](#backups) if you want them preserved.
 - The volume is shared across all ClaudeClaw+ state, so a runaway `npm install` can consume significant space. `du -sh /root/.claude/npm-*` to audit.
+
+---
+
+## Adding Python packages
+
+Same story as npm. Some Claude Code skills shell out to `pip install` for Python tooling, and the default install location (`/root/.local/` or system `site-packages`) sits inside the writable image layer — wiped on every image pull. The container redirects `pip` into the persistent volume so installed packages and the pip cache survive container recreation and image rebuilds.
+
+### How it works
+
+On every start, `entrypoint.sh` exports:
+
+| Variable                                       | Effect                                                  |
+| ---------------------------------------------- | ------------------------------------------------------- |
+| `PYTHONUSERBASE=/root/.claude/python-user`     | `pip install --user` site-packages and scripts go to `python-user/lib/pythonX.Y/site-packages/` and `python-user/bin/` |
+| `PIP_USER=1`                                   | `pip install` defaults to `--user` mode (no need to pass it every time) |
+| `PIP_BREAK_SYSTEM_PACKAGES=1`                  | Bypasses Debian's PEP 668 "externally managed" warning. Safe here because we're never touching system `site-packages` — only the relocated user-base |
+| `PIP_CACHE_DIR=/root/.claude/pip-cache`        | pip download cache                                      |
+| `PATH=/root/.claude/python-user/bin:$PATH`     | Installed Python scripts are on `PATH` for the daemon and every process it spawns |
+
+Layout added to the volume:
+
+```
+/root/.claude/
+├── python-user/
+│   ├── bin/        # scripts on PATH
+│   └── lib/pythonX.Y/site-packages/
+└── pip-cache/      # pip download cache
+```
+
+### Installing a package
+
+From a running container, or from a Claude Code skill:
+
+```bash
+docker compose exec claudeclaw-plus pip install httpie
+docker compose exec claudeclaw-plus http --version   # binary persists across restarts
+```
+
+### Bake packages into a custom image
+
+Same pattern as npm — extend the base image:
+
+```Dockerfile
+FROM ghcr.io/paulmeier/claudeclaw-plus-container:latest
+RUN pip install httpie ruff
+```
+
+### Caveats
+
+- Python user-base is keyed by Python minor version (`python3.11/site-packages` etc.). If the base image's Python minor version ever bumps, previously installed packages become invisible — same trade-off as `npm-global` if Node's major version bumps.
+- `du -sh /root/.claude/python-*` to audit space usage.
 
 ---
 
