@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.1.0...v1.2.0) (2026-05-19)
+
+
+### Features
+
+* port UV + pnpm + migrations + healthcheck + Dockerfile-ENV to plus ([2b60f33](https://github.com/paulmeier/claudeclaw-plus-container/commit/2b60f334ebffcf74eda2fa752deeffcb96bd03e9))
+* port UV + pnpm + migrations + healthcheck + Dockerfile-ENV to plus ([0b6a6a4](https://github.com/paulmeier/claudeclaw-plus-container/commit/0b6a6a44ec66289d63f0f7db77a53ee73c00b40e))
+
 ## [1.1.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.0.2...v1.1.0) (2026-05-18)
 
 
