@@ -298,9 +298,14 @@ Everything is stored in the `claudeclaw-plus-data` named volume at `/root/.claud
 | `claudeclaw/whisper/`      | whisper.cpp binary + model files        |
 | `plugins/`                 | Installed Claude Code plugins           |
 | `npm-global/`              | Globally installed npm packages + bins  |
-| `npm-cache/`               | npm and npx download cache              |
+| `npm-cache/`               | npm download cache; `_npx/` subdir holds the npx tarball cache |
 | `python-user/`             | `pip install` site-packages + bins      |
 | `pip-cache/`               | pip download cache                      |
+| `pnpm-global/`             | pnpm content-addressable store, manifest, and `bin/` shims |
+| `uv-tools/`                | `uv tool install` isolated venvs        |
+| `uv-tool-bin/`             | UV tool shims + bins                    |
+| `uv-cache/`                | UV download cache; `uvx` environments   |
+| `uv-python/`               | UV-managed Python installations         |
 
 To back up or inspect the volume:
 
@@ -351,7 +356,20 @@ docker compose exec claudeclaw-plus npm install -g cowsay
 docker compose exec claudeclaw-plus cowsay hello   # binary persists across restarts
 ```
 
-`npx` works the same way — first call downloads, subsequent calls (even after container recreation) read from the cached tarball.
+### npx
+
+`npx` requires no separate setup. Because `NPM_CONFIG_CACHE` already points into the volume, npx's download cache (`npm-cache/_npx/`) is persisted automatically — the tarball is fetched once and reused across container recreations:
+
+```bash
+docker compose exec claudeclaw-plus npx cowsay hello   # downloads on first call
+docker compose exec claudeclaw-plus npx cowsay hello   # reads from volume cache
+```
+
+Note that npx does not maintain a persistent global install — it downloads, runs, and exits. The volume caches the tarball so subsequent calls are fast, but there is no equivalent of `npm install -g` to migrate. If a Node major version bump breaks a cached npx package with native addons, clear the cache and npx will redownload a fresh copy on the next call:
+
+```bash
+docker compose exec claudeclaw-plus rm -rf /root/.claude/npm-cache/_npx
+```
 
 ### Bake packages into a custom image
 
@@ -370,9 +388,28 @@ services:
     image: my/claudeclaw-plus:latest
 ```
 
+### Node version migration
+
+npm global packages all live in a single `npm-global/lib/node_modules/` directory — there is no version-keyed subdirectory like Python's `lib/pythonX.Y/`. Pure JavaScript packages keep working across Node major versions without any action. The problem is **native addons** (packages that compile `.node` binaries via `node-gyp`): those are built against a specific Node ABI and will fail to load under a different major version. Reinstalling forces npm to recompile them for the current runtime.
+
+Run `migrate-npm.sh` inside the container after a base image update that bumps the Node major version:
+
+```bash
+docker compose exec claudeclaw-plus /migrate-npm.sh
+```
+
+The script reads `name` and `version` from each top-level `package.json` in `npm-global/lib/node_modules/` (including scoped packages), then calls `npm install -g name@version` for all of them, recompiling any native addons for the current Node ABI.
+
+For **npx**, there is nothing to reinstall — npx redownloads on demand. If a cached npx package fails due to a stale native addon, clear the npx cache:
+
+```bash
+docker compose exec claudeclaw-plus rm -rf /root/.claude/npm-cache/_npx
+```
+
 ### Caveats
 
 - Wiping the volume (`docker compose down -v`) removes installed packages along with everything else. Use [`backup.sh`](#backups) if you want them preserved.
+- If the base image's Node major version bumps, native addons will break. Run [`/migrate-npm.sh`](#node-version-migration) to reinstall and recompile them.
 - The volume is shared across all ClaudeClaw+ state, so a runaway `npm install` can consume significant space. `du -sh /root/.claude/npm-*` to audit.
 
 ---
@@ -421,10 +458,181 @@ FROM ghcr.io/paulmeier/claudeclaw-plus-container:latest
 RUN pip install httpie ruff
 ```
 
+### Python version migration
+
+Python user-base directories are keyed by minor version (`lib/python3.11/`, `lib/python3.12/`, …). When the base image's Python minor version bumps, packages installed under the old version become **invisible** to the new interpreter — the old `site-packages/` directory still exists on disk but is simply not on the new Python's search path. Run `migrate-python.sh` inside the container to reinstall them:
+
+```bash
+docker compose exec claudeclaw-plus /migrate-python.sh
+```
+
+The script scans every old `pythonX.Y` directory under `python-user/lib/`, reads each package's name and version from `.dist-info/METADATA`, and calls `pip install` to reinstall them under the current version. The old directories are left in place so you can verify nothing is missing before removing them:
+
+```bash
+# Confirm your packages work, then clean up the old directory
+docker compose exec claudeclaw-plus rm -rf /root/.claude/python-user/lib/python3.11
+```
+
 ### Caveats
 
-- Python user-base is keyed by Python minor version (`python3.11/site-packages` etc.). If the base image's Python minor version ever bumps, previously installed packages become invisible — same trade-off as `npm-global` if Node's major version bumps.
+- Python user-base is keyed by Python minor version (`python3.11/site-packages` etc.). If the base image's Python minor version ever bumps, previously installed packages become invisible — run [`/migrate-python.sh`](#python-version-migration) to recover them.
+- For Python CLI tools specifically, [`uv tool install`](#adding-uv-packages) avoids this problem: UV tools live in named venvs, not version-keyed directories, so they survive Python minor version changes more gracefully.
 - `du -sh /root/.claude/python-*` to audit space usage.
+
+---
+
+## Adding pnpm packages
+
+pnpm is pre-installed in the image. Its global package shims and content-addressable store are both redirected into the persistent volume so packages added with `pnpm add -g` survive container recreation and image rebuilds.
+
+### How it works
+
+On every start, `entrypoint.sh` exports:
+
+| Variable                                       | Effect                                                  |
+| ---------------------------------------------- | ------------------------------------------------------- |
+| `PNPM_HOME=/root/.claude/pnpm-global`          | pnpm's content-addressable store, global manifest, and `bin/` shims all land under here |
+| `PATH=/root/.claude/pnpm-global/bin:$PATH`     | Shims are on `PATH` for the daemon and every process it spawns |
+
+Layout added to the volume:
+
+```
+/root/.claude/pnpm-global/
+├── bin/        # shim scripts on PATH (one per globally installed package)
+├── global/     # pnpm global manifest
+└── store/      # content-addressable package store
+```
+
+### Installing a package
+
+From a running container, or from a Claude Code skill:
+
+```bash
+docker compose exec claudeclaw-plus pnpm add -g cowsay
+docker compose exec claudeclaw-plus cowsay hello   # shim persists across restarts
+```
+
+### Bake packages into a custom image
+
+```Dockerfile
+FROM ghcr.io/paulmeier/claudeclaw-plus-container:latest
+RUN pnpm add -g cowsay some-other-pkg
+```
+
+Then point `docker-compose.yml` at the new image:
+
+```yaml
+services:
+  claudeclaw-plus:
+    image: my/claudeclaw-plus:latest
+```
+
+### Node version migration
+
+pnpm global packages face the same native addon problem as npm globals — `.node` binaries compiled against the old ABI fail silently under a new Node major version. Run `migrate-pnpm.sh` to reinstall:
+
+```bash
+docker compose exec claudeclaw-plus /migrate-pnpm.sh
+```
+
+The script calls `pnpm ls --global --json --depth=0` to enumerate installed packages, then reinstalls each pinned `name@version` with `pnpm add -g`, forcing recompilation of any native addons.
+
+### Caveats
+
+- Wiping the volume (`docker compose down -v`) removes all pnpm global packages and the store along with everything else. Use [`backup.sh`](#backups) to preserve them.
+- If the base image's Node major version bumps, native addons will break. Run [`/migrate-pnpm.sh`](#node-version-migration-1) to reinstall and recompile them.
+- `du -sh /root/.claude/pnpm-*` to audit space usage. The content-addressable store deduplicates package content but can still grow large if many different versions are installed over time.
+
+---
+
+## Adding UV packages
+
+[uv](https://docs.astral.sh/uv/) is a fast Python package and project manager from Astral. It is pre-installed in the image. Unlike `pip install --user`, UV installs tools into **isolated virtual environments** so each tool has its own dependency tree with no conflicts.
+
+### How it works
+
+On every start, `entrypoint.sh` exports:
+
+| Variable                                           | Effect                                                  |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| `UV_TOOL_DIR=/root/.claude/uv-tools`               | Isolated venvs for each `uv tool install`-ed package    |
+| `UV_TOOL_BIN_DIR=/root/.claude/uv-tool-bin`        | Shim scripts for tool executables; added to `PATH`      |
+| `UV_CACHE_DIR=/root/.claude/uv-cache`              | Download cache; also holds `uvx` ephemeral environments |
+| `UV_PYTHON_INSTALL_DIR=/root/.claude/uv-python`    | Python versions downloaded via `uv python install`      |
+
+Layout added to the volume:
+
+```
+/root/.claude/
+├── uv-tools/       # one subdirectory per installed tool, each containing an isolated venv
+├── uv-tool-bin/    # shim scripts on PATH
+├── uv-cache/       # download cache; uvx/_/... for uvx ephemeral environments
+└── uv-python/      # UV-managed Python installations
+```
+
+### Installing a tool
+
+`uv tool install` installs a Python application into its own isolated venv and creates a shim in `uv-tool-bin/` so the executable is available on PATH:
+
+```bash
+docker compose exec claudeclaw-plus uv tool install ruff
+docker compose exec claudeclaw-plus ruff --version   # shim persists across restarts
+```
+
+Upgrade a tool to a newer version:
+
+```bash
+docker compose exec claudeclaw-plus uv tool install --upgrade ruff
+```
+
+List installed tools:
+
+```bash
+docker compose exec claudeclaw-plus uv tool list
+```
+
+### uvx
+
+`uvx` runs a Python tool without permanently installing it — equivalent to `npx` for Python. UV downloads the package into a temporary environment in `UV_CACHE_DIR` and runs it:
+
+```bash
+docker compose exec claudeclaw-plus uvx cowsay hello   # downloads on first call
+docker compose exec claudeclaw-plus uvx cowsay hello   # reads from volume cache
+```
+
+No persistent entry is left behind. The volume cache means subsequent calls are fast, even after container recreation.
+
+### Bake tools into a custom image
+
+```Dockerfile
+FROM ghcr.io/paulmeier/claudeclaw-plus-container:latest
+RUN uv tool install ruff httpie
+```
+
+### Python version migration
+
+UV tools run in isolated venvs that record the **absolute path** of the Python interpreter they were created with (e.g. `/usr/bin/python3.11`). This is different from the pip problem: pip packages become *invisible* because the version-keyed directory is no longer searched; UV tool venvs become *invalid* because the recorded interpreter path no longer exists. The symptom is also different — pip-installed scripts silently produce import errors, while UV tool shims fail immediately at exec time.
+
+If the base image's system Python minor version changes (e.g. 3.11 → 3.12), run `migrate-uv.sh` to recreate each venv under the current Python:
+
+```bash
+docker compose exec claudeclaw-plus /migrate-uv.sh
+```
+
+The script reads the original package name and version specifier from each tool's `uv-receipt.json`, then calls `uv tool install --reinstall` to rebuild the venv.
+
+`uvx` environments are simpler to recover — they are ephemeral by design. The cache just makes repeat calls fast; nothing needs to be reinstalled. If a `uvx` environment is broken, clear the cache and it will be rebuilt on the next call:
+
+```bash
+docker compose exec claudeclaw-plus uv cache clean
+```
+
+### Caveats
+
+- Wiping the volume (`docker compose down -v`) removes all UV tool venvs and the cache. Use [`backup.sh`](#backups) to preserve them.
+- If the base image's Python minor version bumps, tool venvs become stale. Run [`/migrate-uv.sh`](#python-version-migration-1) to recreate them.
+- UV-managed Pythons (`uv python install`) are persisted under `uv-python/` in the volume. If you rely on a specific UV-managed Python for your tools, it will survive image rebuilds without being re-fetched.
+- `du -sh /root/.claude/uv-*` to audit space usage.
 
 ---
 
@@ -530,6 +738,28 @@ alias claudeclaw-plus='/bin/zsh -l /Users/you/Projects/claudeclaw-plus-container
 ```
 
 Then run `source ~/.zshrc` and type `claudeclaw-plus` anywhere.
+
+---
+
+## Health check
+
+`healthcheck.sh` runs automatically at every container start and is available as `/healthcheck` (no `.sh`) at any time:
+
+```bash
+docker compose exec claudeclaw-plus /healthcheck
+```
+
+It reports:
+
+- **Runtimes** — Node version and ABI, npm, pnpm, Bun, Python, pip, and uv versions
+- **npm globals** — installed packages with versions; warns if the Node ABI has changed since the last start (indicating native addons may be broken)
+- **pnpm globals** — same ABI check for pnpm-managed globals
+- **pip user packages** — lists installed packages; warns if stale `pythonX.Y/site-packages/` directories from an older Python minor version are found
+- **uv tools** — lists installed tools; detects broken venvs by checking that the Python interpreter path recorded in each venv's `pyvenv.cfg` still exists on disk
+- **Volume disk usage** — size of every package manager directory under `/root/.claude/`
+- **Environment** — the active values of all package-manager env vars (`NPM_CONFIG_PREFIX`, `PYTHONUSERBASE`, `UV_TOOL_DIR`, etc.) so you can verify they point where expected
+
+Warnings include the exact migration command to run. The script exits 0 regardless of warnings — they are advisory and do not block startup.
 
 ---
 
