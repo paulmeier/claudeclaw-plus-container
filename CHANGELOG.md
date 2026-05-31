@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.2.0...v1.3.0) (2026-05-31)
+
+
+### Features
+
+* trixie base + Chromium runtime deps for dev-browser plugin ([043b093](https://github.com/paulmeier/claudeclaw-plus-container/commit/043b0934a00caa3f207da56a721ba3aa56cbc28b))
+* trixie base + Chromium runtime deps for dev-browser plugin ([d264e6d](https://github.com/paulmeier/claudeclaw-plus-container/commit/d264e6d3798af374efa5755ede2d2a4200a9400a))
+
 ## [1.2.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.1.0...v1.2.0) (2026-05-19)
 
 
