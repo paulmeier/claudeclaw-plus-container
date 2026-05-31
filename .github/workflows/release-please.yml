@@ -1,26 +1,21 @@
 name: Release Please
 
 # Opens (and keeps updating) a release PR whenever a conventional-commit
-# `feat:` or `fix:` lands on main. Merging that release PR cuts the next
-# version: release-please updates CHANGELOG.md, creates the git tag, and
-# publishes a GitHub Release. The job then dispatches docker-publish.yml
-# at the new tag so the image is built and pushed.
+# `feat:` or `fix:` lands on main, then immediately squash-merges it using
+# the RELEASE_BOT_TOKEN PAT. The merge — authored by the PAT, not the default
+# GITHUB_TOKEN — triggers a second run of this workflow on push:main, which
+# detects `release_created=true` and dispatches docker-publish.yml at the tag.
 #
-# Why dispatch instead of letting docker-publish.yml listen on
-# `release: published`? Releases created with the default GITHUB_TOKEN
-# do NOT trigger downstream workflow runs (GitHub's loop-prevention
-# behavior). workflow_dispatch via GITHUB_TOKEN is explicitly allowed,
-# so we use that as the bridge.
+# A PAT (not GITHUB_TOKEN) is required because GITHUB_TOKEN-authored pushes
+# don't trigger downstream workflow runs (GitHub loop-prevention). The
+# RELEASE_BOT_TOKEN PAT needs Contents + Pull requests + Actions: read/write.
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write   # required to dispatch docker-publish.yml
+permissions: {}
 
 jobs:
   release-please:
@@ -29,14 +24,57 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4
         with:
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Auto-merge release PR
+        if: steps.release.outputs.pr
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        run: |
+          pr_number=$(echo '${{ steps.release.outputs.pr }}' | jq -r .number)
+          gh pr merge "$pr_number" --repo ${{ github.repository }} --squash --delete-branch
 
       - name: Trigger docker-publish for the new release
         if: steps.release.outputs.release_created == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: |
           gh workflow run docker-publish.yml \
             --repo ${{ github.repository }} \
             --field tag=${{ steps.release.outputs.tag_name }}
+
+      # If this release advanced the bundled upstream pin (i.e. it was a weekly
+      # upstream sync, not a plain code release), append a compare link so the
+      # automated bumps are self-documenting. Detected by diffing .upstream-ref
+      # between this release tag and the previous one via the contents API — no
+      # checkout, and it stays silent for releases that don't touch the pin.
+      - name: Append upstream compare to release notes
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+          NEW_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          repo="${{ github.repository }}"
+          prev_tag=$(gh release list --repo "$repo" --limit 2 --json tagName --jq '.[1].tagName // ""')
+          read_ref() {
+            gh api "repos/${repo}/contents/.upstream-ref?ref=$1" --jq '.content' 2>/dev/null \
+              | tr -d '\n' | base64 -d 2>/dev/null | tr -d '[:space:]'
+          }
+          new_ref=$(read_ref "$NEW_TAG")
+          old_ref=""
+          [ -n "$prev_tag" ] && old_ref=$(read_ref "$prev_tag")
+          if [ -z "$new_ref" ] || [ "$new_ref" = "$old_ref" ]; then
+            echo "No .upstream-ref change in ${NEW_TAG}; leaving notes as-is."
+            exit 0
+          fi
+          if [ -n "$old_ref" ]; then
+            compare="https://github.com/TerrysPOV/ClaudeClaw-Plus/compare/${old_ref}...${new_ref}"
+          else
+            compare="https://github.com/TerrysPOV/ClaudeClaw-Plus/commit/${new_ref}"
+          fi
+          body=$(gh release view "$NEW_TAG" --repo "$repo" --json body --jq '.body')
+          printf '%s\n\n**Upstream changes:** %s\n' "$body" "$compare" \
+            | gh release edit "$NEW_TAG" --repo "$repo" --notes-file -
+          echo "Appended upstream compare to ${NEW_TAG}: ${compare}"
