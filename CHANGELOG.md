@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.3.0...v1.4.0) (2026-05-31)
+
+
+### Features
+
+* fully automated weekly upstream sync + release ([2cf14f6](https://github.com/paulmeier/claudeclaw-plus-container/commit/2cf14f6f2a0507344ecbf45d58d30ca621aaae69))
+* fully automated weekly upstream sync + release ([b4fde42](https://github.com/paulmeier/claudeclaw-plus-container/commit/b4fde4277cbe4fbb4964f4ff87e3bb9f4aac4a3b))
+
 ## [1.3.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.2.0...v1.3.0) (2026-05-31)
 
 
