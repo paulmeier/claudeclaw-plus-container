@@ -89,6 +89,8 @@ On first run the container will:
 
 These are all cached in the volume and skipped on subsequent starts.
 
+The image ships Chromium runtime libraries pre-installed (Playwright's canonical Debian 13 dependency set), so the `dev-browser` plugin launches Chromium without needing `apt-get` inside the container — which is blocked anyway in hardened deployments that drop `CAP_SETGID`. The previous bookworm-slim base required consumers to swap the `dev-browser` binary for its musl variant to work around an out-of-date glibc; that workaround is **no longer needed** — trixie-slim ships glibc 2.41, satisfying the upstream `dev-browser-linux-{x64,arm64}` binaries directly on both `linux/amd64` and `linux/arm64`.
+
 ---
 
 ## Configuration
@@ -461,6 +463,8 @@ RUN pip install httpie ruff
 ```
 
 ### Python version migration
+
+**If you are upgrading from a pre-trixie image** (anything built on the old `node:24-slim` / bookworm-slim base), the first start on a trixie-based image triggers exactly this case: bookworm-slim shipped python3.11; trixie-slim ships python3.13. Existing pip-installed packages under `python-user/lib/python3.11/` become invisible to python3.13. The healthcheck on startup prints a warning pointing here; run `docker compose exec claudeclaw-plus /migrate-python.sh` to restore them.
 
 Python user-base directories are keyed by minor version (`lib/python3.11/`, `lib/python3.12/`, …). When the base image's Python minor version bumps, packages installed under the old version become **invisible** to the new interpreter — the old `site-packages/` directory still exists on disk but is simply not on the new Python's search path. Run `migrate-python.sh` inside the container to reinstall them:
 

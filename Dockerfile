@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:24-trixie-slim
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -10,6 +10,48 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     python3 \
     python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Chromium runtime libraries for the dev-browser Claude Code plugin
+# (https://github.com/SawyerHood/dev-browser). The plugin auto-installs on
+# ClaudeClaw+ startup and drives Playwright + headless Chromium; without
+# these libs Chromium aborts at launch with
+# "libglib-2.0.so.0: cannot open shared object file". apt cannot run
+# inside the running container because hardened ClaudeClaw+ deployments
+# drop CAP_SETGID, so the libs have to be baked into the image.
+#
+# Package list = Playwright's canonical Debian 13 / Ubuntu 24.04 list,
+# taken from microsoft/playwright main @ 2026-05-23
+# (packages/playwright-core/src/server/registry/nativeDeps.ts).
+# Re-validate when bumping Playwright. The t64 suffixes are from Debian's
+# time_t transition — the bookworm names (libasound2, libglib2.0-0, ...)
+# would fail to install on trixie.
+#
+# Installed unconditionally on linux/amd64 and linux/arm64: dev-browser
+# ships a linux-arm64 binary since v0.2.3 (confirmed via GitHub Releases
+# API on 2026-05-23), so arm64 users need the same Chromium libs.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libasound2t64 \
+    libatk-bridge2.0-0t64 \
+    libatk1.0-0t64 \
+    libatspi2.0-0t64 \
+    libcairo2 \
+    libcups2t64 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libglib2.0-0t64 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libx11-6 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Bun
