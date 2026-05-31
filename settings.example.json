@@ -1,0 +1,52 @@
+{
+  "model": "sonnet",
+
+  "web": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 4632
+  },
+
+  "telegram": {
+    "token": "",
+    "allowedUserIds": [],
+    "receiveEnabled": false,
+    "dmIsolation": "shared",
+    "whisperModel": "base.en"
+  },
+
+  "discord": {
+    "token": "",
+    "allowedUserIds": [],
+    "listenChannels": [],
+    "listenGuilds": []
+  },
+
+  "slack": {
+    "botToken": "",
+    "appToken": "",
+    "allowedUserIds": [],
+    "listenChannels": []
+  },
+
+  "heartbeat": {
+    "enabled": false,
+    "interval": 60,
+    "prompt": "Check in — any tasks or reminders to handle?",
+    "forwardToTelegram": false
+  },
+
+  "security": {
+    "level": "moderate",
+    "allowedTools": [],
+    "disallowedTools": []
+  },
+
+  "session": {
+    "autoRotate": true,
+    "maxMessages": 200,
+    "maxAgeHours": 24
+  },
+
+  "sessionTimeoutMs": 1800000
+}
