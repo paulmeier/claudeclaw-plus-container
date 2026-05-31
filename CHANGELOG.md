@@ -5,8 +5,24 @@
 
 ### Features
 
-* trixie base + Chromium runtime deps for dev-browser plugin ([043b093](https://github.com/paulmeier/claudeclaw-plus-container/commit/043b0934a00caa3f207da56a721ba3aa56cbc28b))
-* trixie base + Chromium runtime deps for dev-browser plugin ([d264e6d](https://github.com/paulmeier/claudeclaw-plus-container/commit/d264e6d3798af374efa5755ede2d2a4200a9400a))
+* **trixie base + Chromium runtime deps for the dev-browser plugin** ([#19](https://github.com/paulmeier/claudeclaw-plus-container/pull/19)) ([043b093](https://github.com/paulmeier/claudeclaw-plus-container/commit/043b0934a00caa3f207da56a721ba3aa56cbc28b))
+
+This release rebases the image on **Debian 13 "trixie"** and pre-installs the Chromium runtime libraries the bundled [`dev-browser`](https://github.com/SawyerHood/dev-browser) plugin needs, so headless-browser automation works out of the box on both `linux/amd64` and `linux/arm64`. It brings ClaudeClaw+ to parity with the vanilla image's [v1.10.0](https://github.com/paulmeier/claudeclaw-container/releases/tag/v1.10.0).
+
+* **Base image:** `node:24-slim` (Debian 12 "bookworm") → `node:24-trixie-slim` (Debian 13) — glibc 2.36 → **2.41**, Python 3.11 → **3.13**.
+* **Chromium runtime libraries baked in** (Playwright's canonical Debian-13 set: `libglib2.0-0t64`, `libnss3`, `libgbm1`, `libasound2t64`, `libatk-bridge2.0-0t64`, …). `dev-browser` auto-installs on startup and now launches headless Chromium without an in-container `apt-get` — which hardened deployments block by dropping `CAP_SETGID`.
+* **Removes the fragile musl-binary workaround** that older bookworm images needed for `dev-browser`; glibc 2.41 satisfies the upstream `dev-browser-linux-{x64,arm64}` binaries directly.
+* **Image size:** ~1.32 GB → ~1.63 GB uncompressed (the Chromium libraries are the bulk).
+
+#### ⚠️ Upgrade note — one-time Python migration
+
+trixie ships Python **3.13**; the previous base shipped **3.11**. Any `pip`-installed packages saved in your volume under `python-user/lib/python3.11/` become invisible to the new interpreter (the files stay on disk — they are just off Python 3.13's search path). On first start the container's healthcheck prints a warning pointing here; restore them with:
+
+```bash
+docker compose exec claudeclaw-plus /migrate-python.sh
+```
+
+Your config, data, and npm / pnpm / uv tooling are unaffected (those are keyed differently). Nothing else changes — same entrypoint, ports, and `/root/.claude` volume.
 
 ## [1.2.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.1.0...v1.2.0) (2026-05-19)
 
