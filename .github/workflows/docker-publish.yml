@@ -27,6 +27,13 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
 
+      # Pin the build to the upstream SHA recorded in .upstream-ref at this tag,
+      # so the image is reproducible from the tag rather than whatever
+      # TerrysPOV/ClaudeClaw-Plus@main happens to be at build time.
+      - name: Read pinned upstream SHA
+        id: pin
+        run: echo "ref=$(tr -d '[:space:]' < .upstream-ref)" >> "$GITHUB_OUTPUT"
+
       # Produces all relevant Docker tags, e.g. for v1.2.3:
       #   :1.2.3   :1.2   :1   :latest
       - name: Extract Docker metadata
@@ -61,6 +68,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CLAUDECLAW_PLUS_REF=${{ steps.pin.outputs.ref }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
