@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.6.0...v1.7.0) (2026-06-22)
+
+
+### Features
+
+* bump ClaudeClaw+ to b6900ca ([#28](https://github.com/paulmeier/claudeclaw-plus-container/issues/28)) ([037a726](https://github.com/paulmeier/claudeclaw-plus-container/commit/037a7261cda02caaa464c9a6a0686ff9d3594282))
+
 ## [1.6.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.5.0...v1.6.0) (2026-06-15)
 
 
