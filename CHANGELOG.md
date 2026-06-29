@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.7.0...v1.8.0) (2026-06-29)
+
+
+### Features
+
+* bump ClaudeClaw+ to 6eabb49 ([#30](https://github.com/paulmeier/claudeclaw-plus-container/issues/30)) ([9c955f7](https://github.com/paulmeier/claudeclaw-plus-container/commit/9c955f7c35f9a774235193faa7b8139cf9ee7923))
+
 ## [1.7.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.6.0...v1.7.0) (2026-06-22)
 
 
