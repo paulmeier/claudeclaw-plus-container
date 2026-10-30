@@ -88,10 +88,10 @@ mkdir -p /root/.claude/tmp \
 # daemon and aborts, which `restart: unless-stopped` turns into a restart loop
 # (issue claudeclaw-plus-container#44). No daemon from an earlier container can
 # be alive in this PID namespace. Kept for the one-shot subcommands
-# (`docker compose run --rm claudeclaw status`), which share the volume with a
+# (`docker compose run --rm claudeclaw-plus status`), which share the volume with a
 # running daemon and must not remove its file.
 case "${1:-}" in
-    --stop-all|--stop|--clear|status|telegram|discord|slack|send) ;;
+    --help|-h|help|--stop-all|--stop|--clear|status|telegram|discord|slack|send|fire|oneshot) ;;
     *) rm -f "${SETTINGS_DIR}/daemon.pid" ;;
 esac
 
