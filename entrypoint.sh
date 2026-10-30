@@ -82,4 +82,17 @@ mkdir -p /root/.claude/tmp \
 # migration warnings. Always exits 0 — warnings are advisory.
 /healthcheck.sh || true
 
+# Drop the daemon PID file left by the previous run. The daemon is PID 1 here
+# (exec below), so the file always says "1" — and PID 1 always exists in a
+# fresh container, so upstream's liveness check reads a stale file as a live
+# daemon and aborts, which `restart: unless-stopped` turns into a restart loop
+# (issue claudeclaw-plus-container#44). No daemon from an earlier container can
+# be alive in this PID namespace. Kept for the one-shot subcommands
+# (`docker compose run --rm claudeclaw status`), which share the volume with a
+# running daemon and must not remove its file.
+case "${1:-}" in
+    --stop-all|--stop|--clear|status|telegram|discord|slack|send) ;;
+    *) rm -f "${SETTINGS_DIR}/daemon.pid" ;;
+esac
+
 exec bun run /app/src/index.ts "$@"
