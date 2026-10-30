@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.15.0...v1.15.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* remove stale daemon.pid on container start ([#41](https://github.com/paulmeier/claudeclaw-plus-container/issues/41)) (mirror @ f7a41ab) ([#47](https://github.com/paulmeier/claudeclaw-plus-container/issues/47)) ([ae7f424](https://github.com/paulmeier/claudeclaw-plus-container/commit/ae7f424240433c4e3f41af5e87d43cfba84d8368))
+
 ## [1.15.0](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.14.0...v1.15.0) (2026-10-30)
 
 
