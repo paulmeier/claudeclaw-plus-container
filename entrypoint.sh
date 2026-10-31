@@ -78,6 +78,24 @@ mkdir -p /root/.claude/tmp \
          /root/.claude/uv-tools /root/.claude/uv-tool-bin \
          /root/.claude/uv-cache /root/.claude/uv-python
 
+# Claude Code's x86_64 binary and the Bun runtime both need AVX2 (Intel Haswell /
+# AMD Excavator or newer). On older CPUs they die with SIGILL (exit 132) and the
+# container restart-loops with no explanation (issue claudeclaw-container-unraid#17),
+# so probe both up front and say why. Probing the binaries rather than reading
+# /proc/cpuinfo avoids false alarms under emulation, where the flags can be missing.
+for bin in claude bun; do
+    rc=0
+    "${bin}" --version >/dev/null 2>&1 || rc=$?
+    if [ "${rc}" -eq 132 ]; then
+        echo "[claudeclaw] Error: '${bin}' crashed with an illegal instruction (exit 132)."
+        if [ "$(uname -m)" = "x86_64" ] && ! grep -qw avx2 /proc/cpuinfo; then
+            echo "[claudeclaw] This CPU does not support AVX2, which Claude Code requires on x86_64."
+            echo "[claudeclaw] It needs an Intel Haswell (2013) / AMD Excavator (2015) or newer CPU; there is no build for older CPUs."
+        fi
+        exit 1
+    fi
+done
+
 # Run startup diagnostics: print runtime versions, package inventories, and any
 # migration warnings. Always exits 0 — warnings are advisory.
 /healthcheck.sh || true
