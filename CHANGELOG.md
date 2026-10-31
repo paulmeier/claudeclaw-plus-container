@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.3](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.15.2...v1.15.3) (2026-10-31)
+
+
+### Bug Fixes
+
+* explain AVX2 crashes and allow pinning the dashboard token ([#46](https://github.com/paulmeier/claudeclaw-plus-container/issues/46)) (mirror @ 254c8c8) ([#52](https://github.com/paulmeier/claudeclaw-plus-container/issues/52)) ([f74bacb](https://github.com/paulmeier/claudeclaw-plus-container/commit/f74bacb36461d4981c6cf42eb460f445c1e67eb4))
+
 ## [1.15.2](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.15.1...v1.15.2) (2026-10-31)
 
 
