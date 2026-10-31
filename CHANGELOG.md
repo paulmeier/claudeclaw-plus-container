@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.15.1...v1.15.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* back up the real compose volume, gate auto-merges on a smoke test ([#43](https://github.com/paulmeier/claudeclaw-plus-container/issues/43)) (mirror @ be99df6) ([#49](https://github.com/paulmeier/claudeclaw-plus-container/issues/49)) ([fe405ae](https://github.com/paulmeier/claudeclaw-plus-container/commit/fe405aef52b7291ea02d1e78ce2b67453007b0b2))
+
 ## [1.15.1](https://github.com/paulmeier/claudeclaw-plus-container/compare/v1.15.0...v1.15.1) (2026-10-30)
 
 
