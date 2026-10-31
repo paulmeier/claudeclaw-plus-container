@@ -11,6 +11,7 @@
 [![Lint](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/lint.yml)
 [![Security scan](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml/badge.svg)](https://github.com/paulmeier/claudeclaw-plus-container/actions/workflows/security.yml)
 [![Container](https://img.shields.io/badge/ghcr.io-paulmeier%2Fclaudeclaw--plus--container-2496ED?logo=docker&logoColor=white)](https://github.com/paulmeier/claudeclaw-plus-container/pkgs/container/claudeclaw-plus-container)
+[![Docker Hub](https://img.shields.io/badge/docker.io-paulmeier%2Fclaudeclaw--plus--container-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/paulmeier/claudeclaw-plus-container)
 [![License](https://img.shields.io/github/license/paulmeier/claudeclaw-plus-container)](LICENSE)
 
 Docker container for [ClaudeClaw+](https://github.com/TerrysPOV/ClaudeClaw-Plus) — a superset of [claudeclaw](https://github.com/moazbuilds/claudeclaw) that adds a governance and policy layer, durable multi-step orchestration, persistent cross-session memory, and a hardened web UI on top of the upstream daemon. ClaudeClaw+ syncs from upstream daily, so everything in vanilla claudeclaw is here too — Telegram, Discord, and Slack bridges, scheduled jobs, voice transcription, and the web dashboard.
