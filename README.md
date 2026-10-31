@@ -38,6 +38,7 @@ Docker container for [ClaudeClaw+](https://github.com/TerrysPOV/ClaudeClaw-Plus)
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose
 - A Claude Code subscription (claude.ai/code) — no API key required
+- On x86_64, a CPU with **AVX2** (Intel Haswell / AMD Excavator, 2013–2015, or newer). Claude Code ships no build for older CPUs; on them the container stops at startup with an explanation. arm64 hosts are unaffected.
 - Optional: a Telegram bot token, Discord bot token, or Slack app token for messaging
 
 ---
@@ -278,6 +279,26 @@ docker compose down && docker compose up -d
 ## Web dashboard
 
 Available at `http://localhost:4632` when `web.enabled` is `true`. Shows active jobs, logs, and session status. To access it from a remote host, either expose the port via a reverse proxy or change the port mapping in `docker-compose.yml`.
+
+### Access token
+
+The dashboard requires an access token. ClaudeClaw+ generates it on first start and keeps it in the volume, so it stays the same across restarts. It is not printed in the logs; read it with:
+
+```bash
+docker compose exec claudeclaw-plus cat /root/.claude/claudeclaw/web.token
+```
+
+Open `http://<your-server>:4632/?token=<token>` once per browser — the dashboard remembers it and strips it from the URL.
+
+To choose the token yourself (for example to set it from a template or secret store), set `CLAUDECLAW_PLUS_WEB_TOKEN`; the entrypoint writes it to `web.token` on every start:
+
+```yaml
+# docker-compose.yml
+    environment:
+      - CLAUDECLAW_PLUS_WEB_TOKEN=${CLAUDECLAW_PLUS_WEB_TOKEN}   # e.g. from `openssl rand -hex 32`
+```
+
+Use URL-safe characters (letters, digits, `-`, `_`), since the token goes in the URL. Unset it to keep the current token; delete `web.token` and restart to generate a new random one.
 
 ---
 
@@ -772,6 +793,12 @@ Check logs: `docker compose logs`. Usually a missing or malformed `settings.json
 
 **Web dashboard not loading**
 Ensure `web.enabled` is `true` and `web.host` is `"0.0.0.0"` in settings. The entrypoint auto-corrects `127.0.0.1` → `0.0.0.0`, but other values are left as-is.
+
+**Dashboard asks for a token**
+See [Access token](#access-token).
+
+**Container restart-loops with exit code 132 / "Illegal instruction"**
+The CPU lacks AVX2, which Claude Code requires on x86_64 (see [Prerequisites](#prerequisites)). The logs say so explicitly: `This CPU does not support AVX2`. There is no workaround short of newer hardware.
 
 **Bot not responding to messages**
 
