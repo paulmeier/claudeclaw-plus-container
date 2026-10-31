@@ -49,6 +49,18 @@ if [ "${CURRENT_HOST}" = "127.0.0.1" ]; then
     echo "[claudeclaw-plus] Patched web.host to 0.0.0.0 for container networking"
 fi
 
+# Pin the web dashboard token. ClaudeClaw+ reads ${SETTINGS_DIR}/web.token at
+# startup, generating a random one if it is missing, and only logs the bare
+# dashboard URL. Setting CLAUDECLAW_PLUS_WEB_TOKEN gives a known, stable value to
+# open as http://<host>:4632/?token=<value> on any device (mirrors
+# claudeclaw-container-unraid#18).
+if [ -n "${CLAUDECLAW_PLUS_WEB_TOKEN:-}" ]; then
+    if [ "${#CLAUDECLAW_PLUS_WEB_TOKEN}" -lt 16 ]; then
+        echo "[claudeclaw-plus] Warning: CLAUDECLAW_PLUS_WEB_TOKEN is shorter than 16 characters; anyone who can reach the dashboard could guess it."
+    fi
+    (umask 077 && printf '%s\n' "${CLAUDECLAW_PLUS_WEB_TOKEN}" > "${SETTINGS_DIR}/web.token")
+fi
+
 # ClaudeClaw+ resolves its data directory (.claude/claudeclaw/) from CWD,
 # so run from /root so data lands in the volume-mounted /root/.claude/
 cd /root
@@ -87,10 +99,10 @@ for bin in claude bun; do
     rc=0
     "${bin}" --version >/dev/null 2>&1 || rc=$?
     if [ "${rc}" -eq 132 ]; then
-        echo "[claudeclaw] Error: '${bin}' crashed with an illegal instruction (exit 132)."
+        echo "[claudeclaw-plus] Error: '${bin}' crashed with an illegal instruction (exit 132)."
         if [ "$(uname -m)" = "x86_64" ] && ! grep -qw avx2 /proc/cpuinfo; then
-            echo "[claudeclaw] This CPU does not support AVX2, which Claude Code requires on x86_64."
-            echo "[claudeclaw] It needs an Intel Haswell (2013) / AMD Excavator (2015) or newer CPU; there is no build for older CPUs."
+            echo "[claudeclaw-plus] This CPU does not support AVX2, which Claude Code requires on x86_64."
+            echo "[claudeclaw-plus] It needs an Intel Haswell (2013) / AMD Excavator (2015) or newer CPU; there is no build for older CPUs."
         fi
         exit 1
     fi
