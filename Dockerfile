@@ -116,5 +116,16 @@ VOLUME /root/.claude
 
 EXPOSE 4632
 
+# Liveness probe against upstream's unauthenticated /api/health endpoint, so
+# `docker ps`, Unraid, and tools like autoheal can tell a hung daemon from a
+# healthy one (plain `restart:` policies only react to the process exiting,
+# not to an unhealthy status). Reads the port from settings.json; reports healthy when the dashboard
+# is disabled, since there is then nothing to probe. Not to be confused with
+# /healthcheck.sh, which is the startup diagnostics report.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD s=/root/.claude/claudeclaw/settings.json; \
+        [ "$(jq -r '.web.enabled // false' "$s")" != "true" ] \
+        || curl -fsS -o /dev/null "http://127.0.0.1:$(jq -r '.web.port // 4632' "$s")/api/health"
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["start"]
